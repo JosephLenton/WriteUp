@@ -1,0 +1,11 @@
+@charset "utf-8";
+
+/* Helper classes, apply to anything you want to show/hide during noscript */
+.noscript_none     { display: none   !important; }
+.noscript_block   { display: block  !important; }
+.noscript_inline { display: inline !important; }
+
+/* noscript for the whole site */
+.gamePlayerWindow .gamePlayerGame .background {
+    display: inline;
+}

@@ -1,0 +1,31 @@
+@charset "utf-8";
+
+/* Browser Specific Code here */
+
+html.ie {
+}
+
+html.ie9 {
+}
+html.ie6 footer, html.ie7 footer, html.ie8 footer {
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e0e0e0', endColorstr='#f0f0f0',GradientType=0 ); /* IE6-8 */
+}
+html.ie8 {
+}
+html.ie7 {
+}
+html.ie6 {
+}
+
+html.firefox {
+}
+
+html.chrome {
+}
+
+html.safari {
+}
+
+/* Mac Specific fixes */
+html.mac {
+}

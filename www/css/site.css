@@ -1,0 +1,340 @@
+
+@import url(http://fonts.googleapis.com/css?family=Oxygen+Mono);
+@import url(http://fonts.googleapis.com/css?family=Sintony);
+
+html, body,
+h1, h2, h3, h4, h5, p {
+	color: #333;
+	font-weight: 400;
+}
+html, body {
+	min-height: 100%;
+	width: 100%;
+	height: 100%;
+
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+
+    font-family: "Segoe UI", "Helvetica Neue", Roboto, sans-serif;
+    font-size: 15px;
+}
+html {
+	padding-bottom: 40px;
+}
+
+.index,
+body {
+	margin: 0 auto;
+
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+
+	padding: 0 24px 32px 24px;
+
+    position: relative;
+	width: 800px;
+}
+
+/**
+ * Headers and basic paragraph
+ */
+
+h1, h2, h3, h4, h5 {
+	font-weight: 200;
+}
+h1, h2 {
+}
+h1, h2, h3 {
+}
+h1 {
+	font-size: 28px;
+}
+h2 {
+	font-size: 26px;
+	font-weight: 400;
+	margin: 24px 0 12px 0;
+}
+h3 {
+	font-size: 21px;
+	font-weight: 300;
+	margin: 18px 0 9px 0;
+}
+h4 {
+
+}
+h5 {
+
+}
+
+a {
+	-webkit-transition: background 100ms linear 0s, color 100ms linear 0s;
+	-moz-transition: background 100ms linear 0s, color 100ms linear 0s;
+	-ms-transition: background 100ms linear 0s, color 100ms linear 0s;
+	-o-transition: background 100ms linear 0s, color 100ms linear 0s;
+	transition: background 100ms linear 0s, color 100ms linear 0s;
+}
+a,
+a:focus,
+a:visited,
+a:active {
+	text-decoration: none;
+    color: #999;
+}
+a:hover {
+	text-decoration: underline;
+    color: #222;
+}
+
+li {
+	list-style-type: lower-greek;
+	margin: 1px 0 1px 32px;
+}
+
+p {
+	font-size  : inherit;
+	font-weight: 400;
+	text-align : justify;
+
+    margin-bottom: 9px;
+}
+/* The text indentation on following paragraphs */
+p + p {
+	text-indent: 32px;
+}
+
+/**
+ * Topbar
+ */
+
+.topbar,
+footer {
+	font-size: 16px;
+	font-family: calibri;
+
+	padding: 0 25px;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+.topbar {
+	padding-top: 9px;
+	padding-bottom: 6px;
+	
+	margin-bottom: 32px;
+	width: 680px;
+	margin-left: -25px;
+
+	border-bottom: 1px solid #e2e2e2;
+}
+	.topbar-home {
+	}
+	.topbar-login {
+	}
+
+/**
+ * Footer
+ */
+.topbar,
+.topbar-home,
+.topbar-home:hover,
+.topbar-home:visited,
+.topbar-home:active,
+.topbar-login,
+.topbar-login:hover,
+.topbar-login:visited,
+.topbar-login:active,
+footer,
+.footer-link,
+.footer-link:hover,
+.footer-link:focus,
+.footer-link:visited,
+.footer-link:active {
+	color: #999;
+}
+
+.topbar-home,
+.topbar-login,
+.footer-link {
+	margin-right: 18px;
+}
+
+.topbar-home:hover,
+.topbar-login:hover,
+.footer-link:hover {
+	text-decoration: none;
+	color: #000;
+	cursor: pointer;
+}
+footer {
+	position: absolute;
+	top: 100%;
+	margin-top: -40px;
+	left: 0;
+	right: 0;
+
+	width: 680px;
+	margin: -40px auto 0 auto;
+
+	border-top: 1px solid #e2e2e2;
+}
+	.footer-bottom {
+		padding-top: 9px;
+		min-height: 24px;
+		padding-bottom: 6px;
+		-moz-box-sizing: border-box;
+		box-sizing: border-box;
+	}
+		.footer-link {
+			float: left;
+			clear: none;
+		}
+		.footer-copyright {
+			float: right;
+			clear: none;
+
+			right: 6px;
+		}
+
+/*
+ * Index page
+ */
+
+#home_index > body {
+    width: 100%;
+    position: none;
+}
+    .index-back {
+        position: absolute;
+
+        top: 0;
+        left: 0;
+        right: 0;
+
+        height: 400px;
+
+        background: #4ce4ff; /* Old browsers */
+
+        background: -moz-linear-gradient(top,  #ddd 0%, #fff 100%); /* FF3.6+ */
+        background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#ddd), color-stop(100%,#fff)); /* Chrome,Safari4+ */
+        background: -webkit-linear-gradient(top,  #ddd 0%,#fff 100%); /* Chrome10+,Safari5.1+ */
+        background: -o-linear-gradient(top,  #ddd 0%,#fff 100%); /* Opera 11.10+ */
+        background: -ms-linear-gradient(top,  #ddd 0%,#fff 100%); /* IE10+ */
+        background: linear-gradient(to bottom,  #ddd 0%,#fff 100%); /* W3C */
+    }
+        .index-cutout {
+            display: block;
+            width: 800px;
+            height: 100%;
+            margin: 18px auto 0 auto;
+
+            background: #fff;
+
+            border-top-left-radius: 18px;
+            border-top-right-radius: 18px;
+
+            border: 1px solid #ddd;
+            box-shadow: 1px 6px 18px rgba( 0, 0, 0, 0.15 );
+            border-bottom: none;
+        }
+
+.index {
+    position: relative;
+    top: 32px;
+
+    background: white;
+    overflow: hidden;
+}
+    header {
+        width: 100%;
+        text-align: left;
+
+        padding: 9px 0 0 0;
+
+        float: left;
+        clear: both;
+
+        position: relative;
+
+        margin-bottom: 24px;
+    }
+            .index > header > h1 {
+                font-family: 'Sintony', sans-serif;
+                font-size: 100px;
+                text-align: left;
+                margin: 0;
+                color: #000;
+            }
+            .index > header > h2 {
+                color: #000;
+
+                margin: -18px 0 0 0;
+                padding: 0;
+            }
+    .index-rightbar,
+    .index-about,
+    .index-buttons {
+        width: 50%;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+    }
+    .index-about {
+        float: left;
+        clear: none;
+
+        padding-right: 18px;
+    }
+    .index-rightbar,
+    .index-buttons {
+        float: right;
+
+        padding-left: 18px;
+    }
+    .index-rightbar > h2 {
+        float: left;
+        clear: left;
+
+        margin-bottom: 32px;
+    }
+    .index-buttons {
+        text-align: center;
+        height: 42px;
+            margin-bottom: 40px;
+    }
+        .index-buttons .guest,
+        .index-buttons .login {
+            position: relative;
+            top: 6px;
+
+            padding: 6px 24px 8px 24px;
+            border: 1px solid #222;
+            border-radius: 3px;
+
+            font-size: 21px;
+            font-weight: 900;
+
+            box-shadow: 1px 1px 3px rgba( 0, 0, 0, 0.3 );
+        }
+        .index-buttons .guest:hover,
+        .index-buttons .login:hover {
+            text-decoration: none;
+        }
+        .index-buttons .guest {
+            background: #eee;
+            color: #333;
+        }
+        .index-buttons .guest:hover {
+            background: #fff;
+            color: #000
+        }
+        .index-buttons .login {
+            background: #51d9fa;
+            border-color: #25296a;
+            color: #fff;
+
+            margin-left: 12px;
+        }
+        .index-buttons .login:hover {
+            background: #6ef;
+            color: #fff
+        }
+

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<script>
+	var old = window.ActiveXObject;
+
+	window.ActiveXObject = function( a ) {
+		console.log( 'blah' );
+console.log( old );
+		var obj = old( a );
+		obj.onreadystatechange = function() {
+			
+		}
+	};
+
+	var a = new ActiveXObject("Microsoft.XMLHTTP");
+</script>

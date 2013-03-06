@@ -1,0 +1,161 @@
+
+ServerSignature Off
+
+Options +FollowSymLinks
+Options -Indexes
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+</IfModule>
+
+# ensure common types
+AddType audio/ogg                      oga ogg
+AddType audio/wav                      wav
+AddType video/ogg                      ogv
+AddType video/mp4                      mp4
+AddType video/webm                     webm
+
+# Proper svg serving. Required for svg webfonts on iPad
+AddType     image/svg+xml              svg svgz 
+AddEncoding gzip                       svgz
+
+# webfonts                            
+AddType application/vnd.ms-fontobject  eot
+AddType font/truetype                  ttf
+AddType font/opentype                  otf
+AddType application/x-font-woff        woff
+ 
+# assorted types                                     
+AddType image/x-icon                   ico
+AddType image/webp                     webp
+AddType text/cache-manifest            appcache manifest
+AddType text/x-component               htc
+AddType application/x-chrome-extension crx
+AddType application/x-xpinstall        xpi
+AddType application/octet-stream       safariextz
+
+# 
+# from HTML5 Boilerplate
+# 
+
+AddDefaultCharset utf-8
+# force utf-8 for a number of file formats
+AddCharset utf-8 .html .css .js .xml .json .rss .qb
+
+# auto-compress, doesn't work on current hosting!
+<IfModule mod_deflate.c>
+# force deflate for mangled headers developer.yahoo.com/blogs/ydn/posts/2010/12/pushing-beyond-gzipping/
+<IfModule mod_setenvif.c>
+  <IfModule mod_headers.c>
+    SetEnvIfNoCase ^(Accept-EncodXng|X-cept-Encoding|X{15}|~{15}|-{15})$ ^((gzip|deflate)\s,?\s(gzip|deflate)?|X{4,13}|~{4,13}|-{4,13})$ HAVE_Accept-Encoding
+    RequestHeader append Accept-Encoding "gzip,deflate" env=HAVE_Accept-Encoding
+  </IfModule>
+</IfModule>
+# html, txt, css, js, json, xml, htc:
+<IfModule filter_module>
+  FilterDeclare   COMPRESS
+  FilterProvider  COMPRESS  DEFLATE resp=Content-Type /text/(html|css|javascript|quby|plain|x(ml|-component))/
+  FilterProvider  COMPRESS  DEFLATE resp=Content-Type /application/(javascript|json|xml|x-javascript)/
+  FilterChain     COMPRESS
+  FilterProtocol  COMPRESS  change=yes;byteranges=no
+</IfModule>
+
+<IfModule !mod_filter.c>
+  # Legacy versions of Apache
+  AddOutputFilterByType DEFLATE text/html text/plain text/css application/json
+  AddOutputFilterByType DEFLATE text/javascript application/javascript application/x-javascript 
+  AddOutputFilterByType DEFLATE text/quby 
+  AddOutputFilterByType DEFLATE text/xml application/xml text/x-component
+</IfModule>
+
+# webfonts and svg:
+  <FilesMatch "\.(ttf|otf|eot|svg)$" >
+    SetOutputFilter DEFLATE
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_expires.c>
+  ExpiresActive on
+  
+# Perhaps better to whitelist expires rules? Perhaps.
+  ExpiresDefault                          "access plus 1 month"
+
+# cache.appcache needs re-requests in FF 3.6 (thx Remy ~Introducing HTML5)
+  ExpiresByType text/cache-manifest       "access plus 0 seconds"
+
+# your document html
+  ExpiresByType text/html                 "access plus 0 seconds"
+  
+# data
+  ExpiresByType text/xml                  "access plus 0 seconds"
+  ExpiresByType application/xml           "access plus 0 seconds"
+  ExpiresByType application/json          "access plus 0 seconds"
+
+# rss feed
+  ExpiresByType application/rss+xml       "access plus 1 hour"
+
+# favicon (cannot be renamed)
+  ExpiresByType image/x-icon              "access plus 6 week"
+
+# media: images, video, audio
+  ExpiresByType image/gif                 "access plus 1 year"
+  ExpiresByType image/png                 "access plus 1 year"
+  ExpiresByType image/jpg                 "access plus 1 year"
+  ExpiresByType image/jpeg                "access plus 1 year"
+  ExpiresByType image/webp                "access plus 1 year"
+  ExpiresByType video/ogg                 "access plus 1 year"
+  ExpiresByType audio/ogg                 "access plus 1 year"
+  ExpiresByType audio/mp3                 "access plus 1 year"
+  ExpiresByType audio/wav                 "access plus 1 year"
+  ExpiresByType audio/x-wav               "access plus 1 year"
+  ExpiresByType video/mp4                 "access plus 1 year"
+  ExpiresByType video/webm                "access plus 1 year"
+  
+# htc files  (css3pie)
+  ExpiresByType text/x-component          "access plus 1 month"
+  
+# webfonts
+  ExpiresByType font/truetype             "access plus 6 month"
+  ExpiresByType font/opentype             "access plus 6 month"
+  ExpiresByType font/woff                 "access plus 6 month"
+  ExpiresByType image/svg+xml             "access plus 6 month"
+  ExpiresByType application/vnd.ms-fontobject "access plus 6 month"
+  
+# css and javascript
+  ExpiresByType text/css                  "access plus 1 years"
+  ExpiresByType application/javascript    "access plus 1 years"
+  ExpiresByType text/javascript           "access plus 1 years"
+  
+  <IfModule mod_headers.c>
+    Header append Cache-Control "public"
+  </IfModule>
+</IfModule>
+
+# Since we're sending far-future expires, we don't need ETags for
+# static content.
+# 
+# developer.yahoo.com/performance/rules.html#etags
+FileETag None
+
+# Uncomment to enable.
+<IfModule mod_rewrite.c>
+  # cache busting
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^(.+)\.(\d+)\.(js|css|png|jpg|gif)$ $1.$3 [L]
+
+  # always ensure www's (must use www's for the blog)
+  # must use explicit PMC url so it doesn't work on localhost
+  RewriteCond %{HTTP_HOST} ^www.technicalwriteup.com$ [NC]
+  RewriteRule ^(.*)$ http://technicalwriteup.com/$1 [R=301,L]
+  
+  # block access to hidden files
+  RewriteRule "(^|/)\." - [F]
+
+  # stay out of the library folders!
+  RewriteRule ^app index.php [L]
+  RewriteRule ^flexi index.php [L]
+
+  # Flexi redirect to Flexi entry (index.php)
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule .* index.php [L]
+</IfModule>
