@@ -1,9 +1,4 @@
 <?
-    
-    function minMax( $n, $min, $max ) {
-
-    }
-
     class Home extends SiteController
     {
         const NUM_ON_PAGE = 20;

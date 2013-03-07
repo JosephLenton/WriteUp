@@ -1,6 +1,12 @@
 <?
     class Users extends Model
     {
+        const NO_USERNAME = 1;
+        const INCORRECT_PASSWORD = 2;
+        const USERNAME_TAKEN = 3;
+
+        private static $RESERVED_NAMES = array( 'anon', 'admin' );
+
         public static function hashPassword( $plainText, $salt ) {
             // todo
         }
@@ -9,11 +15,34 @@
             parent::__construct();
         }
 
-        public function newUser( $username, $password ) {
+        public function newUser( $username, $password, $email ) {
+            $username = strtolower( trim($username) );
 
+            if ( $username === '' ) {
+                return Users::NO_USERNAME;
+            } else if ( $password < 6 ) {
+                return Users::INCORRECT_PASSWORD;
+            } else {
+                foreach ( Users::$RESERVED_NAMES as $name ) {
+                    if ( $username === $name ) {
+                        return Users::USERNAME_TAKEN;
+                    }
+                }
+
+                try {
+                    $this->db->users = array(
+                            'username' => $username,
+                            'password' => Users::hashPassword( $password, $salt ),
+                            'salt'     => $salt
+                    );
+                } catch ( Exception $err ) {
+                    return Users::USERNAME_TAKEN;
+                }
+            }
         }
 
         public function getUser( $username ) {
+            $username = strtolower( trim($username) );
 
         }
 
@@ -37,7 +66,7 @@
                     get();
 
             if ( $this->validator->hasErrors() ) {
-                $errors = $this->validator
+                $errors = $this->validator;
             } else {
                 $user = $this->getUser( $username );
 

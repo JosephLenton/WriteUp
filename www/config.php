@@ -202,16 +202,6 @@
                     } );
         } );
         
-        /*
-         * Users are automatically activated, they don't need
-         * to follow the signup link.
-         * 
-         * A mail is still sent (or dumped to a file).
-         */
-        $flexi->events()->onNewModel( 'users', function($users) {
-            $users->autoActivateUsers( true );
-        } );
-        
         /**
          * Hook into the DB.
          */

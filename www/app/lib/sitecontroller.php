@@ -4,8 +4,11 @@
         public function __construct() {
             parent::__construct( 'Articulate' );
 
-            $this->session = $this->load->obj( 'sitesession' );
-            $this->opengraphtags = $this->load->obj( 'SiteOpenGraphTags', null, 'opengraphtags' );
+            $this->load->model->articles();
+            $this->load->model->users();
+
+            $this->load->obj( 'sitesession', 'session', null, $this->users );
+            $this->load->obj( 'SiteOpenGraphTags', 'opengraphtags' );
         }
 
         public function index()
