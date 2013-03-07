@@ -16,8 +16,8 @@
                 <a href="#" class="js-edit-fullscreen article-edit-option fullscreen">fullscreen</a>
 
                 <div class="article-edit-option numbers">
-                    <div class="js-edit-number article-edit-option-label">number headers</div>
-                    <input type="checkbox" />
+                    <label for="edit-numbers" class="js-edit-number article-edit-option-label">number headers</div>
+                    <input name="edit-numbers" type="checkbox" />
                 </div>
 
                 <div class="article-edit-option style">
