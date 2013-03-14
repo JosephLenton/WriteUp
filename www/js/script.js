@@ -7,9 +7,23 @@
         } );
     }
 
+    var Editor = function( dom ) {
+        this.dom = dom;
+    }
+
+    Editor.prototype.highlight( startLine, endLine ) {
+        if ( arguments.length === 0 ) {
+            this.highlight( 0, this.getNumLines() );
+        } else {
+            // todo
+        }
+    }
+
     function initializeEditor() {
         var view = $('.article-view');
         var edit = $('.article-edit');
+
+        var editor = new Editor( $('.js-edit') );
 
         var editFullscreen = $('.article-fullscreen');
         var editWindow = $('.article-window');

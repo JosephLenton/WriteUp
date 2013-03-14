@@ -14,9 +14,10 @@ html, body {
 html,
 body,
 input,
+.js-edit,
 textarea {
     font-family: "Segoe UI", "Segoe WP", "Helvetica Neue", Roboto, sans-serif;
-    font-size: 15px;
+    font-size: 16px;
 }
 html,
 body,
@@ -98,6 +99,7 @@ a:hover {
 
 input,
 select,
+.js-edit,
 textarea {
     border-radius: 2px;
     border: 1px solid #ccc;
@@ -297,19 +299,25 @@ footer {
         }
 
     .article-edit-content {
+        position: relative;
+
         display: block;
 
         margin-top: 9px;
-
-        width: 100%;
-        min-height: 640px;
-        line-height: 21px;
-
-        -moz-box-sizing: border-box;
-        box-sizing: border-box;
-
-        padding: 9px 12px;
-
-        overflow: hidden;
     }
+        .js-edit {
+            width: 100%;
+
+            min-height: 640px;
+            line-height: 21px;
+
+            -moz-box-sizing: border-box;
+            box-sizing: border-box;
+            overflow: hidden;
+
+            padding: 9px 12px;
+
+            -moz-border-box;
+                 border-box;
+        }
 

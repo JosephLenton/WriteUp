@@ -40,6 +40,8 @@
             <h3 class="article-edit-date"><?= date( 'jS F, Y', time() ) ?></h3>
         </div>
 
-        <textarea class="article-edit-content"><?= $content ?></textarea>
+        <div class="article-edit-content">
+            <div contenteditable="true" class="js-edit"><?= $content ?></div>
+        </div>
     </div>
 </div>
