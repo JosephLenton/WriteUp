@@ -4,11 +4,25 @@
         $style = $styles[0];
     }
 ?>
+<?
+    $content = array(
+        '# blah blah',
+        '',
+        '# # kdkdkdkd',
+        '',
+        'test dkdk ',
+        'dkdkdkdkd d',
+        'dkdkdkdk ',
+        'kdkdkdkdkdkdkdkd',
+        'dkdkdkdkdkdkdk'
+    );
+    $content = implode( "\n", $content );
+?>
 
 <div class="article-fullscreen"></div>
 
 <div class="article-window">
-    <div class="article-edit <?= $style ?>">
+    <div class="article-edit">
         <div class="article-edit-header">
             <textarea numrows="1" class="article-edit-title"><?= $title ?></textarea>
 
@@ -40,8 +54,8 @@
             <h3 class="article-edit-date"><?= date( 'jS F, Y', time() ) ?></h3>
         </div>
 
-        <div class="article-edit-content">
-            <div contenteditable="true" class="js-edit"><?= $content ?></div>
-        </div>
+        <span class="article-style <?= $style ?>">
+            <div contenteditable="true" class="js-edit markdown-editor"><?= $content ?></div>
+        </span>
     </div>
 </div>

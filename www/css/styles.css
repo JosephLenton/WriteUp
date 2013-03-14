@@ -5,6 +5,55 @@
  * and applied on top of the articles.
  */
 
-article.academic {
+/*
+ * The academic font.
+ */
+@import url(http://fonts.googleapis.com/css?family=Neuton:200,300,400,700);
+
+.article-style.informal {
+    font-weight: 400;
+    font-size: 14px;
+}
+    .article-style.informal,
+    .article-style.informal .style-h1,
+    .article-style.informal .style-h2,
+    .article-style.informal .style-h3,
+    .article-style.informal .style-h3,
+    .article-style.informal .style-h4,
+    .article-style.informal .style-h5 {
+        font-family: "Segoe UI Light", "Helvetica Neue", 'RobotoLight', "Segoe UI", "Segoe WP", sans-serif;
+    }
+
+    .article-style.informal .style-h1,
+    .article-style.informal .style-h2,
+    .article-style.informal .style-h3 {
+        text-transform: lowercase;
+        font-weight: 100;
+    }
+
+    .article-style.informal .style-h1 {
+        font-size: 36px;
+    }
+    .article-style.informal .style-h2 {
+        font-size: 24px;
+    }
+    .article-style.informal .style-h3 {
+        font-size: 22px;
+    }
+    .article-style.informal .style-h4 {
+        font-size: 18px
+    }
+    .article-style.informal .style-h5 {
+    }
+
+.article-style.academic,
+.article-style.academic .style-h1,
+.article-style.academic .style-h2,
+.article-style.academic .style-h3,
+.article-style.academic .style-h3,
+.article-style.academic .style-h4,
+.article-style.academic .style-h5 {
+    font-family: 'Neuton', 'Times New Roman';
+    font-weight: 400;
 }
 

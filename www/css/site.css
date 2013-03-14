@@ -14,7 +14,6 @@ html, body {
 html,
 body,
 input,
-.js-edit,
 textarea {
     font-family: "Segoe UI", "Segoe WP", "Helvetica Neue", Roboto, sans-serif;
     font-size: 16px;
@@ -309,7 +308,6 @@ footer {
             width: 100%;
 
             min-height: 640px;
-            line-height: 21px;
 
             -moz-box-sizing: border-box;
             box-sizing: border-box;
@@ -321,3 +319,8 @@ footer {
                  border-box;
         }
 
+    .editor-line {
+        display: block;
+        white-space: pre;
+        line-height: 30px;
+    }

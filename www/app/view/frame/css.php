@@ -6,6 +6,7 @@
              */
             css( "/css/reset.css"            ),
             css( "/css/site.css"             ),
+            css( "/css/styles.css"           ),
             
             // these items should always go at the end of the head
             css( "/css/browser_specific.css" ),
