@@ -145,6 +145,18 @@
 			}
 		}
 
+        private static function checkTables( $stored, $newTables ) {
+            if ( $stored === false ) {
+                throw new Exception( "no database tables found" );
+            } else {
+                for ( $i = 0; $i < count($newTables); $i++ ) {
+                    if ( ! in_array($newTables[$i], $stored) ) {
+                        throw new Exception( "Unknown table given, " . $newTables[$i] );
+                    }
+                }
+            }
+        }
+
 		/**
 		 *
 		 */
@@ -237,6 +249,8 @@
         private $beforeQuery;
         private $afterQuery;
 
+        private $validateTables;
+
 		/**
 		 * Takes an array containing settings stored under 'username', 'password', 'database' and 'host' for
 		 * the matching database settings for setting up a connection.
@@ -245,6 +259,8 @@
 		 */
 		public function __construct( $configs )
 		{
+            $this->validateTables = null;
+
             if ( ! is_array($configs) ) {
                 $message = '';
 
@@ -308,6 +324,121 @@
 		}
 
         /**
+         * Adds an event to be called when the stated tables are touched. This
+         * is run on every row of the results of the select.
+         *
+         * The event can add or change the properties of the returned value,
+         * this is mainly what it's intended for. If the event returns null
+         * then the object is not added to the results, allowing filtering,
+         * however it's highly advised to do this via the database where
+         * possible.
+         *
+         * If the event fails to return a value then an exception will be
+         * thrown, as it is presumed that the developer has forgotten to bear
+         * in mind that this alters the result.
+         *
+         * If no table is stated then the event is applied to all results of
+         * all select queries. If multiple tables are stated then the results
+         * must be from a select that touched all of those tables.
+         *
+         * If the select touches more tables then the event needs, but does
+         * touch all of the events tables, then the event is still run.
+         *
+         * The event will need to take at least 1 parameter for the row being
+         * passed in.
+         * 
+         * # Examples
+         * 
+         *      // run when the users table is queried
+         *      $db->onSelect( 'users', function($user) {
+         *          $user->user_url = '/users/view/' . $user->username;
+         *      } );
+         *
+         *      // run when *both* users and posts tables are queried
+         *      $db->onSelect( 'users', 'posts', function($posts) {
+         *          $posts->post_url = '/posts/' . $posts->username . '/' . $posts->title;
+         *      } );
+         * 
+         *      // this is the same as the two above ...
+         *      $db->onSelect( array(
+         *              'users' => function($user) {
+         *                  $user->user_url = '/users/view/' . $user->username;
+         *              },
+         * 
+         *              'users, posts' => function($posts) {
+         *                  $posts->post_url = '/posts/' . $posts->username . '/' . $posts->title;
+         *              }
+         *      ) );
+         * 
+         * # Return false
+         * 
+         * You can also filter out results, by returning false. In that case,
+         * a null value is returned in the case of 'get()', or is skipped
+         * entirely in the case of 'gets()'.
+         */
+        public function onSelect( $first )
+        {
+            $numArgs = func_num_args();
+
+            if ( $numArgs === 0 ) {
+                throw new Exception( "not enough parameters" );
+            }
+
+            if ( is_array($first) ) {
+                if ( $numArgs === 1 ) {
+                    foreach ( $first as $props => $fun ) {
+                        $this->onSelect( $props, $fun );
+                    }
+                } else if ( $numArgs === 2 ) {
+                    $fun = func_get_arg( 1 );
+
+                    if ( ! is_callable($fun) ) {
+                        throw new Exception( "Given event is not callable (it's not a function), received: " . $fun );
+                    }
+                } else {
+                    throw new Exception( "too many parameters" );
+                }
+            } else if ( $numArgs === 1 ) {
+                throw new Exception( "not enough parameters" );
+            } else {
+                $tables = array();
+                for ( $i = 0; $i < $numArgs-1; $i++ ) {
+                    $table = strtolower( func_get_arg($i) );
+
+                    if ( strpos($table, ',') !== false ) {
+                        $tableParts = explode( ',', $table );
+
+                        for ( $j = 0; $j < count($tableParts); $j++ ) {
+                            $tables[]= trim( $tableParts[$j] );
+                        }
+                    } else {
+                        $tables[] = $table;
+                    }
+                }
+
+                $event = func_get_arg( $numArgs-1 );
+                if ( ! is_callable( $event ) ) {
+                    throw new Exception( "Given event is not callable (it's not a function), received: " . $event );
+                }
+
+                if ( $this->validateTables !== null ) {
+                    DB::checkTables( $this->validateTables, $tables );
+                }
+
+                $tablesEvent = array(
+                        'tables' => $tables,
+                        'event'  => $event
+                );
+
+                if ( $this->events === null ) {
+                    $this->events = array( $tablesEvent );
+                } else {
+                    $this->events[]= $tablesEvent;
+                }
+            }
+        }
+
+        /**
          * Sets an event which will be alled before a query.
          * 
          * The sql will be passed in as it's only parameter.
@@ -360,55 +491,11 @@
             }
 
 			if ( mysql_select_db($this->database) === false ) {
-                throw new \Exception("Failed to select database: " . $this->database );
+                throw new \Exception("Select failed with database '" . $this->database . "'" );
             }
 
 			return $conn;
 		}
-
-        /**
-         * Adds an event to be called when the stated tables are touched.
-         * This is run on every row of the results of the select.
-         *
-         * The event can add or change the properties of the returned value,
-         * this is mainly what it's intended for. If the event returns null
-         * then the object is not added to the results, allowing filtering,
-         * however it's highly advised to do this via the database where possible.
-         *
-         * If the event fails to return a value then an exception will be thrown,
-         * as it is presumed that the developer has forgotten to bear in mind that
-         * this alters the result.
-         *
-         * If no table is stated then the event is applied to all results of all
-         * select queries. If multiple tables are stated then the results must be
-         * from a select that touched all of those tables.
-         *
-         * If the select touches more tables then the event needs, but does touch
-         * all of the events tables, then the event is still run.
-         *
-         * The event will need to take at least 1 parameter for the row being passed in.
-         */
-        public function addSelectEvent( $event )
-        {
-            if ( ! is_callable( $event ) ) {
-                throw new Exception( "Given event is not callable (it's not a function), received: " . $event );
-            }
-
-            $tables = array();
-            $numTables = func_num_args();
-            for ( $i = 1; $i < $numTables; $i++ ) {
-                $tables[]= strtolower( func_get_arg( $i ) );
-            }
-
-            $tablesEvent = array( 'tables' => $tables, 'event' => $event );
-            if ( $this->events == null ) {
-                $this->events = array( $tablesEvent );
-            } else {
-                $this->events[]= $tablesEvent;
-            }
-
-            return $this;
-        }
 
         /**
          * Calling this disabled events for the next query.
@@ -636,28 +723,47 @@
             $events = null;
             $justField = $this->justField;
             $grabOne = $this->grabOne;
+global $str2;
 
 			if ( $sql === null ) {
                 $isGenerated = true;
 
 				$sqlResult = $this->generateSQL();
+
+                if ( $this->validateTables !== null ) {
+                    DB::checkTables( $this->validateTables, $this->activerecord['table'] );
+                }
+
                 $sql = $sqlResult->sql;
+
+                $allEvents = $this->events;
 
                 if (
                         !$this->skipEvents &&
                         !$justField  &&
-                        $this->events != null &&
+                        $allEvents != null &&
                         $sqlResult->isSelect &&
                         $sqlResult->tables
                 ) {
-                    foreach ( $this->events as $tablesEvent ) {
+                    $sqlTables = $sqlResult->tables;
+                    $sqlTablesCount = count( $sqlTables );
+                    $allEventsCount = count( $allEvents );
+
+                    for ( $i = 0; $i < $allEventsCount; $i++ ) {
+                        $tablesEvent = $allEvents[$i];
                         $tables = $tablesEvent['tables'];
 
                         $count = count( $tables );
                         if ( $count > 0 ) {
-                            foreach ( $sqlResult->tables as $table ) {
-                                if ( in_array( strtolower($table), $tables) ) {
+                            for ( $j = 0; $j < $sqlTablesCount; $j++ ) {
+                                $table = $sqlTables[$j];
+
+                                if ( in_array(strtolower($table), $tables) ) {
                                     $count--;
+
+                                    if ( $count === 0 ) {
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -665,7 +771,7 @@
                         if ( $count <= 0 ) {
                             $event = $tablesEvent['event'];
 
-                            if ( $events == null ) {
+                            if ( $events === null ) {
                                 $events = array( $event );
                             } else {
                                 $events[]= $event;
@@ -708,6 +814,27 @@
             }
 		}
 
+        public function validateTables() {
+            if ( $this->validateTables === null ) {
+                try {
+                    $conn = $this->newConnection();
+                    $nullVal = null;
+
+                    $this->validateTables = $this->executeQuery(
+                            "SHOW TABLES FROM " . $this->database,
+                            $conn,
+                            $nullVal,
+                            true,
+                            false,
+                            $nullVal,
+                            $nullVal
+                    );
+                } catch ( Exception $ex ) {
+                    $this->validateTables = false;
+                }
+            }
+        }
+
 		private function executeQuery( $sql, $conn, &$events, $justField, $grabOne, &$map, &$filter )
 		{
 			$mysqlResults = mysql_query( $sql, $conn );
@@ -737,15 +864,21 @@
                     if ( $grabOne ) {
                         while ( $resultObj = mysql_fetch_object($mysqlResults) ) {
                             foreach ( $events as $event ) {
-                                $resultObj = call_user_func( $event, $resultObj );
+                                $newResultObj = call_user_func( $event, $resultObj );
 
-                                if ( !isset($resultObj) && $resultObj !== null ) {
-                                    throw new Exception( "Event failed to return a value, must be null or a row." );
+                                if ( $newResultObj === false ) {
+                                    $resultObj = false;
+                                    break;
+                                } else if ( $newResultObj !== null ) {
+                                    $resultObj = $newResultObj;
                                 }
+
+                                $results[]= $resultObj;
                             }
 
-                            $resultObj = DB::executeQueryCallbacks( $resultObj, $map, $filter );
-                            if ( isset($resultObj) ) {
+                            if ( $resultObj !== false ) {
+                                $resultObj = DB::executeQueryCallbacks( $resultObj, $map, $filter );
+
                                 $result = $resultObj;
                                 break;
                             }
@@ -753,14 +886,17 @@
                     } else {
                         while ( $resultObj = mysql_fetch_object($mysqlResults) ) {
                             foreach ( $events as $event ) {
-                                $resultObj = call_user_func( $event, $resultObj );
+                                $newResultObj = call_user_func( $event, $resultObj );
 
-                                if ( !isset($resultObj) && $resultObj !== null ) {
-                                    throw new Exception( "Event failed to return a value, must be null or a row." );
+                                if ( $newResultObj === false ) {
+                                    $resultObj = false;
+                                    break;
+                                } else if ( $newResultObj !== null ) {
+                                    $resultObj = $newResultObj;
                                 }
                             }
 
-                            if ( $resultObj !== null ) {
+                            if ( $resultObj !== false ) {
                                 $resultObj = DB::executeQueryCallbacks( $resultObj, $map, $filter );
 
                                 if ( isset($resultObj) ) {
@@ -774,6 +910,7 @@
                     if ( $grabOne ) {
                         while ( $resultRow = mysql_fetch_row($mysqlResults) ) {
                             $resultObj = DB::executeQueryCallbacks( $resultRow[0], $map, $filter );
+
                             if ( isset($resultObj) ) {
                                 $result = $resultObj;
                                 break;
@@ -782,6 +919,7 @@
                     } else {
                         while ( $resultRow = mysql_fetch_row($mysqlResults) ) {
                             $resultObj = DB::executeQueryCallbacks( $resultRow[0], $map, $filter );
+
                             if ( isset($resultObj) ) {
                                 $result[]= $resultObj;
                             }
@@ -791,6 +929,7 @@
                 } else if ( $grabOne ) {
                     while ( $resultObj = mysql_fetch_object($mysqlResults) ) {
                         $resultObj = DB::executeQueryCallbacks( $resultObj, $map, $filter );
+
                         if ( isset($resultObj) ) {
                             $result = $resultObj;
                         }

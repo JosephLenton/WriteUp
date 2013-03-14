@@ -130,7 +130,7 @@
             );
         }
 
-        private function setRememberCookie( $name, $expires )
+        private function setRememberCookie( $cookie, $expires )
         {
             setcookie(
                     $this->_rememberCookie,
@@ -162,27 +162,35 @@
          */
         public function start()
         {
-            if ( ! $this->isStarted() ) {
-                $this->startSession();
-                $this->startRememberMe();
+            if ( ! $this->_started ) {
+                $this->_started = true;
+
+                if ( ! $this->startSession() ) {
+                    $this->startRememberMe();
+                }
             }
 
             return $this;
         }
 
+        /**
+         * @return True if this has a session already, before it was started.
+         */
         private function startSession()
         {
-            if ( ! $this->isStarted() ) {
-                session_start();
-                
-                session_set_cookie_params(
-                        $this->_sessionLifetime,
-                        $this->_sessionPath,
-                        $this->_sessionDomain,
-                        $this->_sessionSecure,
-                        $this->_sessionHttponly
-                );
-            }
+            $hasSession = ( session_id() !== '' );
+
+            session_start();
+        
+            session_set_cookie_params(
+                    $this->_sessionLifetime,
+                    $this->_sessionPath,
+                    $this->_sessionDomain,
+                    $this->_sessionSecure,
+                    $this->_sessionHttponly
+            );
+
+            return $hasSession;
         }
 
         /**
@@ -231,7 +239,7 @@
                         };
 
                         if ( $this->onRememberMe($id, $hashTest) ) {
-                            return;
+                            return true;
                         }
                     }
 
@@ -349,26 +357,30 @@
 
         public function destroySession()
         {
-            $this->startSession();
-
-            foreach ( $_SESSION as $key => $value ) {
-                unset( $_SESSION[$key] );
+            if ( ! $this->_started ) {
+                $this->start();
             }
 
-            if (ini_get("session.use_cookies")) {
-                $params = session_get_cookie_params();
+            if ( session_id() !== '' ) {
+                foreach ( $_SESSION as $key => $value ) {
+                    unset( $_SESSION[$key] );
+                }
+
+                if (ini_get("session.use_cookies")) {
+                    $params = session_get_cookie_params();
+                    
+                    // expire the session cookie
+                    // value string must not be empty!
+                    setcookie(
+                            session_name(), 'a',
+                            1,
+                            $params["path"]  , $params["domain"],
+                            $params["secure"], $params["httponly"]
+                    );
+                }
                 
-                // expire the session cookie
-                // value string must not be empty!
-                setcookie(
-                        session_name(), 'a',
-                        1,
-                        $params["path"]  , $params["domain"],
-                        $params["secure"], $params["httponly"]
-                );
+                session_destroy();
             }
-            
-            session_destroy();
 
             return $this;
         }

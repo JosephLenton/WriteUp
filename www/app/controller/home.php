@@ -8,8 +8,8 @@
         }
 
         public function index( $page=0 ) {
-            $offset = $page*Home::NUM_ON_PAGE;
-            $articles = $this->model->articles->getLatest( $offset, Home::NUM_ON_PAGE );
+            $offset   = $page * Home::NUM_ON_PAGE;
+            $articles = $this->articles->getLatest( $offset, Home::NUM_ON_PAGE );
 
             $this->view->home->index(
                     $articles,
@@ -17,3 +17,4 @@
             );
         }
     }
+

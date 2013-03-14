@@ -275,14 +275,14 @@
      * unless they are told to use a specific one.
      */
     if ( $isDev ) {
-        $flexi->addDatabase( 'main', array(
+        $flexi->addDatabase( array(
                 'username' => '',
                 'password' => '',
                 'database' => '',
                 'hostname' => 'localhost'
         ) );
     } else {
-        $flexi->addDatabase( 'main', array(
+        $flexi->addDatabase( array(
                 'username' => '',
                 'password' => '',
                 'database' => '',
@@ -324,3 +324,6 @@
     $flexi->load(
             'lib/sitecontroller'
     );
+
+    $flexi->loadConfig( 'config_db.php' );
+

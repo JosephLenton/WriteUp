@@ -174,30 +174,50 @@
         {
             $key = strtolower( $key );
 
-            if ( $events !== null && isset($events[$key]) ) {
-                $event = $events[$key];
+            if ( $events !== null ) {
+                if ( isset($events[$key]) ) {
+                    \flexi\EventsHandler::runKeyEventsInner( $events, $key, $args );
+                }
 
-                if ( $args === null ) {
-                    if ( is_array($event) ) {
-                        $len = count($event);
+                if ( isset($events['']) ) {
+                    \flexi\EventsHandler::runKeyEventsInner( $events, '', $args );
+                }
+            }
+        }
 
-                        for ( $i = 0; $i < $len; $i++ ) {
-                            $event[$i]();
-                        }
-                    } else {
-                        $event();
+        private static function runKeyEventsInner( &$events, $key, $args ) {
+            $event = $events[$key];
+
+            if ( $args === null ) {
+                if ( is_array($event) ) {
+                    $len = count($event);
+
+                    for ( $i = 0; $i < $len; $i++ ) {
+                        $ev = $event[$i];
+                        $ev();
                     }
                 } else {
-                    if ( is_array($event) ) {
-                        $len = count($event);
-
-                        for ( $i = 0; $i < $len; $i++ ) {
-                            call_user_func_array( $event[$i], $args );
-                        }
-                    } else {
-                        call_user_func_array( $event, $args );
-                    }
+                    $event();
                 }
+            } else {
+                if ( is_array($event) ) {
+                    $len = count($event);
+
+                    for ( $i = 0; $i < $len; $i++ ) {
+                        call_user_func_array( $event[$i], $args );
+                    }
+                } else {
+                    call_user_func_array( $event, $args );
+                }
+            }
+        }
+
+        private static function runLogicalKeyEvents( &$events, $folder, $key, $args=null )
+        {
+            $folder = strtolower( $folder );
+
+            if ( $events !== null && isset($events[$folder]) ) {
+                \flexi\EventsHandler::runKeyEvents( $events[$folder], $key, $args );
             }
         }
 
@@ -214,7 +234,11 @@
 
         private static function addKeyEvent( &$arr, $key, $val )
         {
-            $key = strtolower( $key );
+            if ( $key === null ) {
+                $key = '';
+            } else {
+                $key = strtolower( $key );
+            }
 
             // don't create an array unless we have to!
             if ( $arr === null ) {
@@ -234,6 +258,36 @@
             }
         }
 
+        private static function addLogicalKeyEvent( &$arr, $folder, $key, $val )
+        {
+            if ( $folder === null ) {
+                $folder = '';
+            } else {
+                $folder = strtolower( $folder );
+            }
+
+            if ( $key === null ) {
+                $key = '';
+            } else {
+                $key = strtolower( $key );
+            }
+
+            // don't create an array unless we have to!
+            if ( $arr === null ) {
+                $arr = array(
+                        $folder => array(
+                                $key => $val
+                        )
+                );
+            } else {
+                if ( isset($arr[$folder]) ) {
+                    EventsHandler::addKeyEvent( $arr[$folder], $key, $val );
+                } else {
+                    $arr[$folder] = array( $key => $val );
+                }
+            }
+        }
+
         private $preAction;
         private $postAction;
 
@@ -241,22 +295,30 @@
 
         private $onNewObject;
         private $onNewKeyObject;
+        private $onNewLogicalKeyObject;
 
-        private $onNewModel;
-        private $onNewKeyModel;
+        private $onLoadFile;
+        private $onLoadKeyFile;
+        private $onLoadLogicalKeyFile;
 
-        public function __construct()
+        private $flexi;
+
+        public function __construct( $flexi )
         {
+            $this->flexi = $flexi;
+
             $this->preAction        = null;
             $this->postAction       = null;
 
             $this->onEnd            = null;
 
-            $this->onNewObject      = null;
-            $this->onNewKeyObject   = null;
+            $this->onNewObject           = null;
+            $this->onNewKeyObject        = null;
+            $this->onNewLogicalKeyObject = null;
 
-            $this->onNewModel       = null;
-            $this->onNewKeyModel    = null;
+            $this->onLoadFile            = null;
+            $this->onLoadKeyFile         = null;
+            $this->onLoadLogicalKeyFile  = null;
         }
 
         public function preAction( $callback )
@@ -268,7 +330,7 @@
 
         public function runPreAction( $controller, $params, $cName, $action )
         {
-            \flexi\EventsHandler::runEvents( $this->preAction, array($controller, $params, $cName, $action) );
+            \flexi\EventsHandler::runEvents( $this->preAction, array($controller, $params, $cName, $action, $this->flexi) );
         }
 
         public function postAction( $callback )
@@ -280,7 +342,7 @@
 
         public function runPostAction( $controller, $result, $cName, $action )
         {
-            \flexi\EventsHandler::runEvents( $this->postAction, array($controller, $result, $cName, $action) );
+            \flexi\EventsHandler::runEvents( $this->postAction, array($controller, $result, $cName, $action, $this->flexi) );
         }
 
         public function onEnd( $callback )
@@ -292,40 +354,158 @@
 
         public function runOnEnd()
         {
-            \flexi\EventsHandler::runEvents( $this->onEnd );
+            \flexi\EventsHandler::runEvents( $this->onEnd, array($this->flexi) );
         }
 
-        public function onNewObject( $name, $callback=null )
+        public function onNewObject( $logical, $name=null, $callback=null )
         {
             if ( func_num_args() === 1 ) {
-                \flexi\EventsHandler::addEvent( $this->onNewObject, $callback );
+                \flexi\EventsHandler::addEvent( $this->onNewObject, $name );
+            } else if ( func_num_args() === 2 ) {
+                \flexi\EventsHandler::addKeyEvent( $this->onNewKeyObject, $logical, $name );
             } else {
-                \flexi\EventsHandler::addKeyEvent( $this->onNewKeyObject, $name, $callback );
+                if ( $logical === null ) {
+                    \flexi\EventsHandler::addKeyEvent( $this->onNewKeyObject, $name, $callback );
+                } else {
+                    \flexi\EventsHandler::addLogicalKeyEvent( $this->onNewLogicalKeyObject, $logical, $name, $callback );
+                }
             }
 
             return $this;
         }
 
-        public function runOnNewObject( $name, $object )
+        public function runOnNewObject( $logical, $name, $object )
         {
-            \flexi\EventsHandler::runEvents( $this->onNewObject, $object, $name );
-            \flexi\EventsHandler::runKeyEvents( $this->onNewKeyObject, $name, array($object, $name) );
+            \flexi\EventsHandler::runEvents          ( $this->onNewObject                           , array($object, $name, $this->flexi) );
+            \flexi\EventsHandler::runKeyEvents       ( $this->onNewKeyObject                 , $name, array($object, $name, $this->flexi) );
+            \flexi\EventsHandler::runLogicalKeyEvents( $this->onNewLogicalKeyObject, $logical, $name, array($object, $name, $this->flexi) );
         }
 
-        public function onNewModel( $name, $callback=null )
+        public function onLoadFile( $logical, $name=null, $callback=null )
         {
             if ( func_num_args() === 1 ) {
-                \flexi\EventsHandler::addEvent( $this->onNewModel, $callback );
+                \flexi\EventsHandler::addEvent( $this->onLoadFile, $name );
+            } else if ( func_num_args() === 2 ) {
+                \flexi\EventsHandler::addKeyEvent( $this->onLoadKeyFile, $logical, $name );
             } else {
-                \flexi\EventsHandler::addKeyEvent( $this->onNewKeyModel, $name, $callback );
+                if ( $logical === null ) {
+                    \flexi\EventsHandler::addKeyEvent( $this->onLoadKeyFile, $name, $callback );
+                } else {
+                    \flexi\EventsHandler::addLogicalKeyEvent( $this->onLoadLogicalKeyFile, $logical, $name, $callback );
+                }
             }
 
             return $this;
         }
 
-        public function runOnNewModel( $name, $object )
+        public function runOnLoadFile( $logical, $name )
         {
-            \flexi\EventsHandler::runEvents( $this->onNewModel, $object, $name );
-            \flexi\EventsHandler::runKeyEvents( $this->onNewKeyModel, $name, array($object, $name) );
+            \flexi\EventsHandler::runEvents          ( $this->onLoadFile                           , array($logical, $name, $this->flexi) );
+            \flexi\EventsHandler::runKeyEvents       ( $this->onLoadKeyFile                 , $name, array($logical, $name, $this->flexi) );
+            \flexi\EventsHandler::runLogicalKeyEvents( $this->onLoadLogicalKeyFile, $logical, $name, array($logical, $name, $this->flexi) );
+        }
+    }
+          
+    class FlexiLazyLoader extends \flexi\Obj
+    {
+        private $flexi;
+        private $folder;
+        private $name;
+        private $cName;
+
+        private $construct;
+        private $args;
+        private $then;
+
+        public function __construct( $flexi, $folder, $name ) {
+            $this->flexi = $flexi;
+
+            $this->folder = $folder;
+            $this->name   = $name;
+            $this->cName  = null;
+
+            $this->construct = null;
+            $this->args = null;
+            $this->then = null;
+        }
+
+        public function className( $name ) {
+            $this->cName = $name;
+
+            return $this;
+        }
+
+        public function args() {
+            if ( $this->construct !== null ) {
+                throw new Error("cannot use both 'args' and 'construct', one or the other");
+            }
+
+            $this->args = func_get_args();
+
+            return $this;
+        }
+
+        public function create( $fun ) {
+            if ( $this->args !== null ) {
+                throw new Error("cannot use both 'args' and 'construct', one or the other");
+            }
+
+            $this->construct = $fun;
+
+            return $this;
+        }
+
+
+        public function then( $fun ) {
+            $this->then = $fun;
+
+            return $this;
+        }
+
+        public function build() {
+            $this->flexi->loadFileFrom( $this->folder, $this->name, true );
+
+            if ( $this->cName !== null ) {
+                $className = $this->cName;
+            } else {
+                $last = strrpos($this->name, '/');
+                if ( $last !== false ) {
+                    $className = substr( $this->name, $last+1 );
+                } else {
+                    $className = $this->name;
+                }
+            }
+
+            $obj = null;
+
+            if ( $this->construct !== null ) {
+                $constructFun = function() use (&$obj, $className) {
+                    $reflection = new \ReflectionClass( $className );
+                    $obj = $reflection->newInstanceArgs( func_get_args() );
+
+                    return $obj;
+                };
+
+                $cons = $this->construct;
+                $newObj = $cons( $constructFun, $this->flexi );
+
+                if ( isset($newObj) && $newObj ) {
+                    $obj = $newObj;
+                }
+            } else if ( $this->args !== null ) {
+                $reflection = new \ReflectionClass( $className );
+                $obj = $reflection->newInstanceArgs( $this->args );
+            } else {
+                $obj = new $className;
+            }
+
+            if ( $this->then !== null ) {
+                $then = $this->then;
+                $then( $obj, $this->flexi );
+            }
+
+            $this->flexi->events()->runOnNewObject( $this->folder, $className, $obj );
+
+            return $obj;
         }
     }

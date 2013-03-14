@@ -14,7 +14,10 @@ html, body {
 	-moz-box-sizing: border-box;
 	box-sizing: border-box;
 }
-html, body, input, textarea {
+html,
+body,
+input,
+textarea {
     font-family: "Segoe UI", "Segoe WP", "Helvetica Neue", Roboto, sans-serif;
     font-size: 15px;
 }
@@ -93,6 +96,13 @@ a:active {
 a:hover {
 	text-decoration: underline;
     color: #222;
+}
+
+input,
+select,
+textarea {
+    border-radius: 2px;
+    border: 1px solid #ccc;
 }
 
 li {
@@ -261,10 +271,6 @@ footer {
         bottom: 0;
     }
 
-.article-edit-title,
-.article-edit-content {
-    border: 1px solid #ddd;
-}
     .article-edit-header {
         width: 500px;
         margin: 24px auto 36px auto;

@@ -27,8 +27,8 @@
             $this->flexi = $flexi;
             $this->parentObj = $parentObj;
 
-            $this->obj   = new FlexiObjectLoader( $this, 'obj'  , false );
-            $this->model = new FlexiObjectLoader( $this, 'model', true  );
+            $this->obj   = new FlexiObjectLoader( $this, 'obj'   );
+            $this->model = new FlexiObjectLoader( $this, 'model' );
             $this->view  = new FlexiViewLoader( $parentObj );
         }
         
@@ -98,7 +98,7 @@
                     array_slice(func_get_args(), 3) :
                     null ;
             
-            $obj = $this->__loadObj( 'model', $file, $varName, $className, $params, true );
+            $obj = $this->__loadObjFrom( 'model', $file, $varName, $className, $params, true );
 
             return $obj;
         }
@@ -126,12 +126,23 @@
                     array_slice(func_get_args(), 3) :
                     null ;
 
-            $obj = $this->__loadObj( 'obj', $file, $varName, $className, $params, false );
+            $obj = $this->__loadObjFrom( 'obj', $file, $varName, $className, $params, false );
+
+            return $obj;
+        }
+
+        public function loadObjFrom( $logicalFolder, $file, $varName=null, $className=null )
+        {
+            $params = ( func_num_args() > 3 ) ?
+                    array_slice(func_get_args(), 3) :
+                    null ;
+
+            $obj = $this->__loadObjFrom( $logicalFolder, $file, $varName, $className, $params, false );
 
             return $obj;
         }
         
-        public function __loadObj( $logicalFolder, $file, $varName=null, $className=null, &$params, $isModel )
+        public function __loadObjFrom( $logicalFolder, $file, $varName=null, $className=null, &$params )
         {
             $last = strrpos( $file, '/'  );
             if ( $last === false ) {
@@ -153,7 +164,7 @@
             if ( $varName === null || $varName === '' ) {
                 $varName = strtolower( $className );
             }
-            
+
             $this->flexi->loadFileFrom( $logicalFolder, $file, true );
             
             // stored so models can get access to this obj
@@ -167,11 +178,7 @@
                 $obj = new $className;
             }
             
-            if ( $isModel ) {
-                $this->flexi->events()->runOnNewModel( $className, $obj );
-            } else {
-                $this->flexi->events()->runOnNewObject( $className, $obj );
-            }
+            $this->flexi->events()->runOnNewObject( $logicalFolder, $className, $obj );
 
             Loader::$currentController  = null;
             $this->parentObj->$varName = $obj;
@@ -390,13 +397,11 @@
     {
         private $parentLoader;
         private $logicalFolder;
-        private $isModel;
 
-        public function __construct( $parentLoader, $logicalFolder, $isModel )
+        public function __construct( $parentLoader, $logicalFolder )
         {
             $this->parentLoader  = $parentLoader;
             $this->logicalFolder = $logicalFolder;
-            $this->isModel       = $isModel;
         }
 
         public function __set( $prop, $value )
@@ -411,7 +416,7 @@
             } else {
                 $params = null;
                 
-                $obj = $this->parentLoader->__loadObj( $this->logicalFolder, $name, null, null, $params, $this->isModel );
+                $obj = $this->parentLoader->__loadObjFrom( $this->logicalFolder, $name, null, null, $params );
                 $this->{$name} = $obj;
 
                 return $obj;
@@ -429,7 +434,7 @@
             if ( count($params) === 0 && isset($this->{$name}) ) {
                 return $this->{$name};
             } else {
-                return $this->parentLoader->__loadObj( $this->logicalFolder, $name, null, null, $params, $this->isModel );
+                return $this->parentLoader->__loadObjFrom( $this->logicalFolder, $name, null, null, $params );
 
                 if ( count($params) === 0 ) {
                     $this->{$name} = $obj;

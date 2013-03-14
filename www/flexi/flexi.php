@@ -38,7 +38,6 @@
             array_pop( Flexi::$currentFlexis );
         }
 
-        private $isConfig;
         private $loads;
 
 		private $frames;
@@ -50,6 +49,8 @@
         private $searchFolders;
 
         private $codePages;
+
+        private $seenFiles;
 
         /**
          * These two are used when no controller or action is specified
@@ -102,26 +103,41 @@
          */
         private $events;
 
-        private $databases = array();
+        private $defaultDatabase;
+        private $namedDatabases;
+
+        private $loaders;
+
+        private $isConfig;
+        private $isConfigDone;
 
         /*
 		 * 
 		 */
 		public function __construct($config = null)
 		{
+            $this->isConfigDone = false;
             $this->isConfig = false;
+
             $this->loads = null;
             $this->workingDir = getcwd();
 
             Flexi::$lastFlexi = $this;
 
-            $this->frames = null;
+            $this->defaultDatabase = null;
+            $this->namedDatabases  = null;
+
+            $this->frames    = null;
             $this->excludes  = array();
             $this->variables = array();
 
+            $this->seenFiles = array();
+
             $this->searchFolders = array();
 
-            $this->events = new \flexi\EventsHandler();
+            $this->loaders = array();
+
+            $this->events = new \flexi\EventsHandler( $this );
 
             $this->codePages = array(
                     404 => array( 'Not Found'               , null, null ),
@@ -149,6 +165,20 @@
         public function events()
         {
             return $this->events;
+        }
+
+        /**
+         * Creates and returns, a lazy loader, which you can use to load and
+         * create objects, after the configuration stage has eneded.
+         */
+        public function lazyLoadObject( $logicalFolder, $obj ) {
+            if ( $this->isConfigDone ) {
+                throw new Exception( "loaders can only be used during the config stage" );
+            }
+
+            $loader = new \flexi\FlexiLazyLoader( $this, $logicalFolder, $obj );
+            $this->loaders[]= $loader;
+            return $loader;
         }
 
         /**
@@ -262,7 +292,15 @@
 
 		public function preRun()
 		{
+            $this->isConfigDone = true;
+
+            $len = count( $this->loaders );
+            for ( $i = 0; $i < $len; $i++ ) {
+                $this->loaders[$i]->build();
+            }
+
 			$len = count( $this->loads );
+
 			if ( $len > 0 ) {
                 Flexi::pushFlexi( $this );
 
@@ -522,42 +560,72 @@
 		}
 
 		/**
-		 * @return Null if the database config is not stored, otherwise an array containing it's configuration.
+         * This returns the database, for the name provided. If no name is
+         * given, then this returns the default database. Otherwise a database
+         * object is looked up, for the model name given, and then returned, if
+         * found.
+         * 
+         * If it is not found, then the default is returned.
+         * 
+         * If there is no database found, at all, not even a default, then this
+         * will throw an exception, as it is presumed this is a configuration
+         * error.
+         * 
+         * @param name Optional, pass in null or nothing at all, for the default database.
+         * @return The Database instance, for the model stated.
 		 */
-		public function getDatabase( $name )
+		public function getDatabase( $name=null )
 		{
-            return isset( $this->databases[$name] ) ?
-                    $this->databases[ $name ] :
-                    null ;
-		}
-
-		/**
-		 * The default database is the first config stored.
-		 *
-		 * @return Null if there are no database configs stored, otherwise the first database config found.
-		 */
-		public function getDefaultDatabase()
-		{
-            if ( count($this->databases) > 0 ) {
-                $default = key( $this->databases );
-                return $this->databases[ $default ];
+            if ( $name !== null && isset($this->namedDatabases[$name]) ) {
+                return $this->namedDatabases[$name];
+            } else if ( $this->defaultDatabase !== null ) {
+                return $this->defaultDatabase;
             } else {
-                return null;
+                throw new Exception("no default database set");
             }
 		}
 
 		/**
-		 * Adds a database config to be stored for use by the Models.
+		 * Adds a database config to be stored for use later.
 		 * The config should be an associative array containing mappings for:
 		 * 'username', 'password', 'database' and 'hostname'.
+         * 
+         * Databases are stored against a name. Technically, this is *just* a
+         * name; an identifier used for them, and nothing more. However by
+         * default, the Model presumes that the name is a 'models' name.
+         * 
+         * That behaviour is specific to the Model, *not*, Flexi. As far as
+         * Flexi and the DB are concerned, there are no models, they do no
+         * exist.
 		 *
-		 * @param name The name to store the config under.
+		 * @param name Optional, the name of the DB is for.
 		 * @param config An associative array containing the settings needed to connect to the DB.
 		 */
-		public function addDatabase( $name, $config )
+		public function addDatabase( $config )
 		{
-			$this->databases[ $name ] = $config;
+            if ( func_num_args() === 2 ) {
+                $model = $config;
+                $config = func_get_arg(1);
+
+                if ( is_array($model) ) {
+                    for ( $i = 0; $i < count($model); $i++ ) {
+                        $this->setNamedDatabase( $model[$i], $config );
+                    }
+                } else {
+                    $this->setNamedDatabase( $model, $config );
+                }
+            } else {
+                $this->defaultDatabase = $config;
+            }
 		}
+
+        private function setNamedDatabase( $model, $config ) {
+            if ( $this->namedDatabases === null ) {
+                $this->namedDatabases = array( $model => $config );
+            } else {
+                $this->namedDatabases[ $model ] = $config;
+            }
+        }
 
 		/**
 		 * All of the paths passed into this are added as folders to search
@@ -580,6 +648,7 @@
 		public function load()
 		{
 			$numArgs = func_num_args();
+
             if ( $this->isConfig ) {
                 if ( $this->loads === null ) {
                     $this->loads = func_get_args();
@@ -741,6 +810,10 @@
 		 */
 		public function loadConfig( $configFile, $failSilent=false )
 		{
+            if ( $this->isConfigDone ) {
+                throw new Exception("loading config file, after the config stage has ended");
+            }
+
             if ( is_array($configFile) ) {
                 foreach ( $configFile as $file ) {
                     $this->loadConfig( $file, $failSilent );
@@ -1264,7 +1337,7 @@
         public function loadFileFrom( $logicalFolder, $file, $loadOnce=true )
         {
             return $this->loadFileHelper(
-                    $this->findFrom( $logicalFolder, $file ),
+                    $logicalFolder,
                     $file,
                     $loadOnce
             );
@@ -1278,6 +1351,7 @@
 		 * When reload is false then required_once is used.
          *
          * Usage:
+         * 
          *  loadFile( file )
          *      searches for the given file in the root, and
          *      then loads it.
@@ -1293,6 +1367,7 @@
          *      searches for the file in the logical folder
          *      given, and then loads it.
          *      If file is already loaded, then it is skipped.
+         * 
          *  loadFile( location, file, loadOnce )
          *      searches for the file in the logical folder,
          *      and is loaded again or not depending on if
@@ -1318,39 +1393,32 @@
                 $logicalFolder = null;
             }
 
-            if ( $logicalFolder === null ) {
-                return $this->loadFileHelper(
-                        $this->findFile( $file ),
-                        $file,
-                        $loadOnce
-                );
-            } else {
-                return $this->loadFileHelper(
-                        $this->findFrom( $logicalFolder, $file ),
-                        $file,
-                        $loadOnce
-                );
-            }
+            return $this->loadFileHelper(
+                    $logicalFolder,
+                    $file,
+                    $loadOnce
+            );
         }
 
-        private function loadFileHelper( $filePath, $file, $loadOnce )
+        private function loadFileHelper( $logicalFolder, $file, $loadOnce )
 		{
+            $filePath = ( $logicalFolder !== null ) ?
+                    $this->findFrom( $logicalFolder, $file ) :
+                    $this->findFile( $file ) ;
+
 			if ( $filePath === false ) {
 				throw new Exception( 'File not found: ' . $file );
 			} else {
 				if ( $loadOnce ) {
-                    requireFileOnce( $filePath, $this );
+                    if ( ! isset($this->seenFiles[$filePath]) ) {
+                        requireFileOnce( $filePath, $this );
+
+                        $this->seenFiles[ $filePath ] = true;
+                        $this->events()->runOnLoadFile( $logicalFolder, $file );
+                    }
 				} else {
                     requireFile( $filePath, $this );
-				}
-
-				$locals = get_defined_vars();
-
-				unset( $locals['filePath'] );
-				unset( $locals['file'] );
-
-				foreach ( $locals as $local => $val ) {
-					$GLOBALS[ $local ] = $val;
+                    $this->events()->runOnLoadFile( $logicalFolder, $file );
 				}
 			}
 		}

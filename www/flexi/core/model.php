@@ -16,6 +16,8 @@
         public $load;
         public $obj;
         public $model;
+
+        protected $db;
         
 		/**
 		 * Creates a new Model.
@@ -36,24 +38,13 @@
 			$this->load  = new Loader( $this, $flexi );
             $this->obj   = $this->load->obj;
             $this->model = $this->load->model;
-            
-            if ( $loadDB ) {
-                // setup the db
-                if ( $dbName == null ) {
-                    $dbConfig = $flexi->getDefaultDatabase();
-                } else {
-                    $dbConfig = $flexi->getDatabase( $dbName );
-                }
-                
-                if ( $dbConfig == null ) {
-                    if ( $dbName != null ) {
-                        throw new Exception( 'Database configuration not found, database: '.$dbName );
-                    }
-                } else {
-                    $this->load->obj->db( $dbConfig );
-                }
-            }
+
+            $this->db = null;
 		}
+
+        public function setDatabase( $db ) {
+            $this->db = $db;
+        }
 
         public function __invoke() {
             $this->invokeErr();

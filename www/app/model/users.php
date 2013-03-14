@@ -11,10 +11,6 @@
             // todo
         }
 
-        public function __construct() {
-            parent::__construct();
-        }
-
         public function newUser( $username, $password, $email ) {
             $username = strtolower( trim($username) );
 
@@ -44,6 +40,7 @@
         public function getUser( $username ) {
             $username = strtolower( trim($username) );
 
+            return $this->db->users->get( 'username', $username );
         }
 
         public function getUserID( $id ) {
@@ -76,5 +73,11 @@
                     $errors = array( 'password' => "incorrect password given" );
                 }
             }
+        }
+
+        public function __construct() {
+            parent::__construct();
+            
+            //$this->db->link( 'users', UserObj );
         }
     }
