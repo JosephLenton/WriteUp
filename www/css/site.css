@@ -8,11 +8,8 @@ h1, h2, h3, h4, h5, p {
 	font-weight: 400;
 }
 html, body {
-	height: 100%;
+    min-height: 100%;
 	width: 100%;
-
-	-moz-box-sizing: border-box;
-	box-sizing: border-box;
 }
 html,
 body,
@@ -21,31 +18,32 @@ textarea {
     font-family: "Segoe UI", "Segoe WP", "Helvetica Neue", Roboto, sans-serif;
     font-size: 15px;
 }
-html {
-	padding-bottom: 72px;
+html,
+body,
+.wrap {
+    min-height: 100%;
 }
 
 body {
-    -moz-box-sizing: border-box;
-    box-sizing: border-box;
-
-	padding: 0 24px 32px 24px;
+    padding: 0;
 
 	width: 800px;
 
-    margin: 0 auto;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    margin-left: -400px;
 }
 
 .wrap {
     width: 100%;
     position: relative;
 
-    min-height: 100%;
+    -moz-box-sizing: border-box;
+         box-sizing: border-box;
 
-    height: auto !important;
-    height: 100%;
-
-    margin: 0 0 -142px;
+    padding: 40px 0 100px 0;
 }
 
 /**
@@ -137,12 +135,12 @@ footer {
 }
 
 .topbar {
-	padding-top: 9px;
-	padding-bottom: 6px;
-	
-	margin-bottom: 32px;
-    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
 
+    padding: 6px 0;
 	border-bottom: 1px solid #e2e2e2;
 }
 
@@ -180,15 +178,14 @@ footer,
 	cursor: pointer;
 }
 footer {
-    height: 40px;
-	width: 680px;
-	margin: 0 auto 0 auto;
+    position: absolute;
+    bottom: 0;
+    left : 60px;
+    right: 60px;
 
-    position: relative;
-    top: 10px;
+    height: 40px;
 }
     .footer-inner {
-        margin-top: 64px;
         padding-bottom: 6px;
         border-top: 1px solid #e2e2e2;
     }
